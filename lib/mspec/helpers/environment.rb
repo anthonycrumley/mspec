@@ -2,19 +2,17 @@ require 'mspec/guards/guard'
 
 class Object
   def env
+    command_output = ''
+
     platform_is_not :opal, :windows do
-      env = Hash[*`env`.split("\n").map { |e| e.split("=", 2) }.flatten]
+      command_output = `env`
     end
 
     platform_is :windows do
-      env = Hash[*`cmd.exe /C set`.split("\n").map { |e| e.split("=", 2) }.flatten]
+      command_output = `cmd.exe /C set`
     end
 
-    platform_is :opal do
-      env = {}
-    end
-
-    env
+    environment_variables(command_output)
   end
 
   def windows_env_echo(var)
@@ -60,5 +58,15 @@ class Object
       return name.strip if $?.success?
     end
     raise Exception, "hostname: unable to find a working command"
+  end
+
+  private
+
+  def environment_variables(command_output)
+    Hash[*environment_tuples(command_output)]
+  end
+  
+  def environment_tuples(command_output)
+    command_output.split("\n").map { |e| e.split("=", 2) }.flatten
   end
 end
